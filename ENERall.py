@@ -67,6 +67,9 @@ class DataENERall:
     din_connected = False
     ain_connected = False
 
+    pin_girouette = 1
+    pin_anenometre = 0
+
     debug = False
 
     def __init__(self):
@@ -137,11 +140,11 @@ class DataENERall:
                     self.logger.put('AccelX', x / 1000.0)
                     self.logger.put('AccelY', y / 1000.0)
                     self.logger.put('AccelZ', z / 1000.0)
-                    self.logger.put('wind_direction', self.cb_wind_direction(self.ain.get_voltage(0)))
-                    self.logger.put('wind_velocity', self.cb_wind_velocity(self.ain.get_voltage(1)))
+                    self.logger.put('wind_direction', self.cb_wind_direction(self.ain.get_voltage(self.pin_girouette)))
+                    self.logger.put('wind_velocity', self.cb_wind_velocity(self.ain.get_voltage(self.pin_anenometre)))
                 except Error as err:
                     log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Bricklet failed: ' +
-                              str(err.description))
+                        str(err.description))
                 # Afficher pour le debug
                 if self.debug:
                     text = 'Torque (Nm) %7.2f ' % self.ctrl.torque
