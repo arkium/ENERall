@@ -67,8 +67,8 @@ class DataENERall:
     din_connected = False
     ain_connected = False
 
-    pin_girouette = 1
-    pin_anenometre = 0
+    pin_girouette = 0
+    pin_anenometre = 1
 
     debug = False
 
