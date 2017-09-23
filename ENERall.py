@@ -38,7 +38,7 @@ from tinkerforge.ip_connection import Error, IPConnection
 
 import controleur as PID
 
-#import logger as LOG
+import logger
 
 log.basicConfig(level=log.INFO)
 
@@ -64,7 +64,7 @@ class DataENERall:
 
     def __init__(self):
         self.ctrl = PID.CONTROLEUR(0.01, 0.5, 0.1)
-        #self.logger = LOG.LOGGER()
+        self.logger = logger.LOGGER()
         self.ipcon = IPConnection()
         while True:
             try:
