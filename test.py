@@ -1,10 +1,34 @@
-import CONTROLEUR as PID
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# Copyright (C) 2017  Paulo Ferreira <paulo.ferreira@arkium.eu>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License 3 as published by
+# the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA.
+
+"""
+Programme pour tester la régulation.
+"""
+
 import time
 import matplotlib.pyplot as plt
+import controleur as PID
 
-def test_controleur(GPT = 0.01,  GPU = 0.5, GPD = 0.16, L=400):
-    ctrl = PID.CONTROLEUR(GPT, GPU, GPD)
-    ctrl.setSampleTime(0.0)
+
+def test_controleur(gpt=0.01, gpu=0.5, gpd=0.16, long=400):
+    """Initialisation du controleur"""
+    ctrl = PID.CONTROLEUR(gpt, gpu, gpd)
+    ctrl.set_sample_time(0.0)
 
     time_list = []
     rotation_list = []
@@ -20,32 +44,32 @@ def test_controleur(GPT = 0.01,  GPU = 0.5, GPD = 0.16, L=400):
     power_list.append(ctrl.power_current)
     power_tested_list.append(ctrl.power_tested)
 
-    END = L
+    end = long
     rot_ini = 0
     rotation = 0
-    for i in range(1, END):
+    for i in range(1, end):
         ctrl.update(rotation)
         if rotation > -1:
             rotation = rot_ini - (ctrl.torque_setpoint * 0.3)
             if rotation < 0:
                 rotation = 0
-        if i>0 and i<80:
+        if i > 0 and i < 80:
             rot_ini = rot_ini + (1 * 0.2)
             if rot_ini > 2:
                 rot_ini = 2
-        if i>80 and i<150:
+        if i > 80 and i < 150:
             rot_ini = rot_ini + (1 * 0.2)
             if rot_ini > 6:
                 rot_ini = 6
-        if i>150 and i<225:
+        if i > 150 and i < 225:
             rot_ini = rot_ini - (1 * 0.2)
             if rot_ini < 2:
                 rot_ini = 2
-        if i>225 and i<300:
+        if i > 225 and i < 300:
             rot_ini = rot_ini + (1 * 0.2)
             if rot_ini > 10:
                 rot_ini = 10
-        if i>300 and i<400:
+        if i > 300 and i < 400:
             rot_ini = rot_ini - (1 * 0.2)
             if rot_ini < 2:
                 rot_ini = 2
@@ -62,9 +86,10 @@ def test_controleur(GPT = 0.01,  GPU = 0.5, GPD = 0.16, L=400):
     plt.plot(time_list, torque_list, label='Couple Turbine (Nm)')
     plt.plot(time_list, power_list, label='P actuelle (Watt)')
     plt.plot(time_list, power_tested_list, label='P à tester (Watt)')
-    plt.plot(time_list, rotation_free_list, '--', label='Rot sans couple (rad/s)')
+    plt.plot(time_list, rotation_free_list, '--',
+             label='Rot sans couple (rad/s)')
     plt.legend()
-    plt.xlim((-2, L))
+    plt.xlim((-2, long))
     plt.ylim((-5, 90))
     plt.xlabel('Cycle')
     plt.title('TEST CONTROLEUR')
@@ -72,4 +97,4 @@ def test_controleur(GPT = 0.01,  GPU = 0.5, GPD = 0.16, L=400):
     plt.show()
 
 if __name__ == "__main__":
-    test_controleur(0.01, 0.5, 0.1, L = 400)
+    test_controleur(0.01, 0.5, 0.1, long=400)
