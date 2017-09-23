@@ -98,7 +98,7 @@ class DataENERall:
             self.ctrl_thread.daemon = True
             self.ctrl_thread.start()
         else:
-            log.info('Error controleur')
+            log.info('Error start controleur')
 
     def cb_controleur(self):
         """
@@ -202,6 +202,7 @@ class DataENERall:
                     self.aout = IndustrialAnalogOut(uid, self.ipcon)
                     self.aout.set_configuration(
                         self.aout.VOLTAGE_RANGE_0_TO_5V, self.aout.CURRENT_RANGE_0_TO_20MA)
+                    self.aout.enable()
                     log.info('IndustrialAnalogOut initialized')
                 except Error as err:
                     log.error('IndustrialAnalogOut init failed: ' +
@@ -240,7 +241,7 @@ if __name__ == "__main__":
     COM = DataENERall()
 
     if sys.version_info < (3, 0):
-        INPUT = raw_input  # Compatibility for Python 2.x
+        INPUT = raw_input # Compatibility for Python 2.x
     INPUT('Press key to exit\n')
 
     if COM.ipcon != None:

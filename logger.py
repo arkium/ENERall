@@ -33,17 +33,20 @@ class LOGGER:
     Nom du fichier : enerall.db
     """
     conn = None
+    time_period = 300 #Période pour l'enregistrement des données. Défaut : 5 minutes
+    name_db = "enerall.db" #Nom du fichier de la base de données
 
     def __init__(self):
         self.items = {}
 
-        self.conn = sqlite3.connect('enerall.db')
+        self.conn = sqlite3.connect(self.name_db)
         cursor = self.conn.cursor()
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS
             data (identifier text, time text, avg_value real, min_value real, max_value real)""")
         self.conn.commit()
 
+        log.info('Start controleur')
         self.upload_thread = threading.Thread(target=self.upload)
         self.upload_thread.daemon = True
         self.upload_thread.start()
@@ -71,13 +74,13 @@ class LOGGER:
         Enregistrer les données dans la base de données toutes les x minutes.
         """
         while True:
-            time.sleep(5 * 60)  # Upload data every 5min
+            time.sleep(self.time_period)  # Upload data every 5min
             if len(self.items) == 0:
                 continue
 
             try:
-                log.info('sqlite3 connection')
-                self.conn = sqlite3.connect('enerall.db')
+                log.info('sqlite3 connection: ' + self.name_db)
+                self.conn = sqlite3.connect(self.name_db)
                 for identifier, value in self.items.items():
                     data = {"identifier": identifier,
                             "avg_value": value[0], "min_value": value[1], "max_value": value[2]}
@@ -86,6 +89,7 @@ class LOGGER:
                         """INSERT INTO data(identifier, time, avg_value, min_value, max_value)
                         VALUES(:name, datetime('now'), :avg_value, :min_value, :max_value)""", data)
                     self.conn.commit()
+                    log.info('Sauvegarde de:' + str(data))
 
             except sqlite3.OperationalError:
                 log.error('Erreur la table existe déjà')
@@ -94,5 +98,22 @@ class LOGGER:
                 self.conn.rollback()
             finally:
                 self.conn.close()
+                log.info('sqlite3 close')
 
             self.items = {}
+
+    def set_time_period(self, value):
+        """
+        Définir la période pour l'enregistrement des données.
+
+        :param value: integer en seconde
+        """
+        self.time_period = value
+
+    def set_name_db(self, value):
+        """
+        Définir le nom du fichier de la base de données en sqlite.
+
+        :param value: string
+        """
+        self.name_db = value       

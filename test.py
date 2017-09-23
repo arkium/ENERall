@@ -23,11 +23,14 @@ Programme pour tester la régulation.
 import time
 import matplotlib.pyplot as plt
 import controleur as PID
+import logger
 
 
 def test_controleur(gpt=0.01, gpu=0.5, gpd=0.16, long=400):
     """Initialisation du controleur"""
     ctrl = PID.CONTROLEUR(gpt, gpu, gpd)
+    log = logger.LOGGER()
+    log.set_time_period(0.5)
     ctrl.set_sample_time(0.0)
 
     time_list = []
@@ -81,6 +84,10 @@ def test_controleur(gpt=0.01, gpu=0.5, gpd=0.16, long=400):
         torque_list.append(ctrl.torque_setpoint)
         power_list.append(ctrl.power_current)
         power_tested_list.append(ctrl.power_tested)
+
+        log.put('rotation', rotation)
+        log.put('torque_setpoint', ctrl.torque_setpoint)
+        log.put('power_current', ctrl.power_current)
 
     plt.plot(time_list, rotation_list, label='Rot Turbine (rad/s)')
     plt.plot(time_list, torque_list, label='Couple Turbine (Nm)')
