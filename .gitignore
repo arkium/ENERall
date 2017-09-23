@@ -1,4 +1,4 @@
 
-.vscode/.ropeproject/config.py
-.vscode/.ropeproject/objectdb
-__pycache__/controleur.cpython-36.pyc
+.vscode/
+.vscode/
+__pycache__/
