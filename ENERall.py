@@ -64,7 +64,7 @@ class DataENERall:
 
     def __init__(self):
         self.ctrl = PID.CONTROLEUR(0.01, 0.5, 0.1)
-        self.logger = logger.LOGGER()
+        self.logger = logger.LOGGER() #Enregistrement tous les 5 minutes (300s)
         self.ipcon = IPConnection()
         while True:
             try:

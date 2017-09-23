@@ -29,9 +29,9 @@ import logger
 def test_controleur(gpt=0.01, gpu=0.5, gpd=0.16, long=400):
     """Initialisation du controleur"""
     ctrl = PID.CONTROLEUR(gpt, gpu, gpd)
-    log = logger.LOGGER()
-    log.set_time_period(0.5)
     ctrl.set_sample_time(0.0)
+
+    log = logger.LOGGER(0.02) #Test de l'enregistrement tous les 20ms
 
     time_list = []
     rotation_list = []

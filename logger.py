@@ -33,11 +33,12 @@ class LOGGER:
     Nom du fichier : enerall.db
     """
     conn = None
-    time_period = 300 #Période pour l'enregistrement des données. Défaut : 5 minutes
-    name_db = "enerall.db" #Nom du fichier de la base de données
 
-    def __init__(self):
+    def __init__(self, time_period=300, name_db="enerall.db"):
         self.items = {}
+
+        self.time_period = time_period #Période pour l'enregistrement des données. Défaut: 5 minutes
+        self.name_db = name_db #Nom du fichier de la base de données
 
         self.conn = sqlite3.connect(self.name_db)
         cursor = self.conn.cursor()
@@ -75,7 +76,8 @@ class LOGGER:
         """
         while True:
             time.sleep(self.time_period)  # Upload data every 5min
-            if len(self.items) == 0:
+            result = len(self.items)
+            if result == 0:
                 continue
 
             try:
@@ -87,14 +89,14 @@ class LOGGER:
                     cursor = self.conn.cursor()
                     cursor.execute(
                         """INSERT INTO data(identifier, time, avg_value, min_value, max_value)
-                        VALUES(:name, datetime('now'), :avg_value, :min_value, :max_value)""", data)
+                        VALUES(:identifier, datetime('now'), :avg_value, :min_value, :max_value)""", data)
                     self.conn.commit()
                     log.info('Sauvegarde de:' + str(data))
 
             except sqlite3.OperationalError:
                 log.error('Erreur la table existe déjà')
             except Exception as err:
-                log.error('Error: ' + str(err))
+                log.error('Error: ' + str(err) +' // '+ str(data))
                 self.conn.rollback()
             finally:
                 self.conn.close()
@@ -116,4 +118,4 @@ class LOGGER:
 
         :param value: string
         """
-        self.name_db = value       
+        self.name_db = value
