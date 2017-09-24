@@ -29,7 +29,6 @@ import logger
 def test_controleur(gpt=0.01, gpu=0.5, gpd=0.16, long=400):
     """Initialisation du controleur"""
     ctrl = PID.CONTROLEUR(gpt, gpu, gpd)
-    ctrl.set_sample_time(0.0)
 
     log = logger.LOGGER(0.02) #Test de l'enregistrement tous les 20ms
 
@@ -43,9 +42,9 @@ def test_controleur(gpt=0.01, gpu=0.5, gpd=0.16, long=400):
     time_list.append(0)
     rotation_free_list.append(0)
     rotation_list.append(0)
-    torque_list.append(ctrl.torque_setpoint)
-    power_list.append(ctrl.power_current)
-    power_tested_list.append(ctrl.power_tested)
+    torque_list.append(ctrl.torque)
+    power_list.append(ctrl.power_last)
+    power_tested_list.append(ctrl.power)
 
     end = long
     rot_ini = 0
@@ -53,7 +52,7 @@ def test_controleur(gpt=0.01, gpu=0.5, gpd=0.16, long=400):
     for i in range(1, end):
         ctrl.update(rotation)
         if rotation > -1:
-            rotation = rot_ini - (ctrl.torque_setpoint * 0.3)
+            rotation = rot_ini - (ctrl.torque * 0.3)
             if rotation < 0:
                 rotation = 0
         if i > 0 and i < 80:
@@ -81,13 +80,13 @@ def test_controleur(gpt=0.01, gpu=0.5, gpd=0.16, long=400):
         time_list.append(i)
         rotation_list.append(rotation)
         rotation_free_list.append(rot_ini)
-        torque_list.append(ctrl.torque_setpoint)
-        power_list.append(ctrl.power_current)
-        power_tested_list.append(ctrl.power_tested)
+        torque_list.append(ctrl.torque)
+        power_list.append(ctrl.power_last)
+        power_tested_list.append(ctrl.power)
 
         log.put('rotation', rotation)
-        log.put('torque_setpoint', ctrl.torque_setpoint)
-        log.put('power_current', ctrl.power_current)
+        log.put('torque_setpoint', ctrl.torque)
+        log.put('power_current', ctrl.power_last)
 
     plt.plot(time_list, rotation_list, label='Rot Turbine (rad/s)')
     plt.plot(time_list, torque_list, label='Couple Turbine (Nm)')

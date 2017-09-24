@@ -110,45 +110,52 @@ class DataENERall:
         # Récupérer valeur compteur pin 3 et mettre à zéro
         # Calculer la fréquence en fonction du time_calcul
         frequence = self.din.get_edge_count(8, True) / self.time_calcul
-        # Convertir impulsion en vitesse angulaire
+        # Convertir fréquence en vitesse angulaire
         self.ctrl.to_angular_velocity(frequence)
         # Calculer le couple nécessaire
         self.ctrl.update(self.ctrl.angular_velocity)
         # Convertir Couple en Voltage
-        self.ctrl.torque_to_voltage(self.ctrl.torque_setpoint)
+        self.ctrl.torque_to_voltage(self.ctrl.torque)
         # Envoyer le nouveau voltage
         self.aout.set_voltage(self.ctrl.torque_voltage)
-        log.info('Controleur Couple: ' + str(self.ctrl.torque_setpoint))
+        # Enregistrer les données
+        self.logger.put('Torque', self.ctrl.torque)
+        self.logger.put('Angular', self.ctrl.angular_velocity)
+        self.logger.put('Power', self.ctrl.power)
+        self.logger.put('Frequence', frequence)
+        text = 'Torque %7.2f ' % self.ctrl.torque
+        text = text + 'Angular velocity %7.2f ' % self.ctrl.angular_velocity
+        text = text + 'Power %7.2f ' % self.ctrl.power
+        text = text + 'Frequence %7.2f ' % frequence
+        log.info(text)
 
     def cb_temperature(self, temperature):
         """
         Temperature callback
         """
-        text = 'Temperature %7.2f ?C' % (temperature / 100.0)
         self.logger.put('Temperature', temperature / 100.0)
-        log.info('Write to line 1: ' + text)
+        text = 'Temperature %7.2f ?C' % (temperature / 100.0)
+        log.info(text)
 
     def cb_sound(self, intensity):
         """
         Sound callback
         """
-        text = 'Intensity %7.2f' % (intensity)
         self.logger.put('Intensity', intensity)
-        log.info('Write to line 2: ' + text)
+        text = 'Intensity %7.2f' % (intensity)
+        log.info(text)
 
     def cb_accelerometer(self, xdata, ydata, zdata):
         """
         Accelerometer callback
         """
-        text = "Acceleration[X]: " + str(xdata / 1000.0) + " g"
         self.logger.put('AccelX', xdata / 1000.0)
-        log.info('Write to line 3: ' + text)
-        text = "Acceleration[Y]: " + str(ydata / 1000.0) + " g"
         self.logger.put('AccelY', ydata / 1000.0)
-        log.info('Write to line 4: ' + text)
-        text = "Acceleration[Z]: " + str(zdata / 1000.0) + " g"
         self.logger.put('AccelZ', zdata / 1000.0)
-        log.info('Write to line 5: ' + text)
+        text = "Accel[X]: " + str(xdata / 1000.0) + " g "
+        text = text + "Accel[Y]: " + str(ydata / 1000.0) + " g "
+        text = text + "Accel[Z]: " + str(zdata / 1000.0) + " g"
+        log.info(text)
 
     def cb_enumerate(self, uid, connected_uid, position, hardware_version, firmware_version, device_identifier, enumeration_type):
         """

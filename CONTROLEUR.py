@@ -22,74 +22,65 @@ Module de régulation cherchant à obtenir la puissance max.
 Version 0.1
 """
 
-import time
 import math
 
 
 class CONTROLEUR:
     """Controleur cherchant à obtenir la puissance max"""
 
-    def __init__(self, GPT=0.0, GPU=0.0, GPD=0.0):
-        self.gap_power_to_test = GPT
-        self.gain_power_up = GPU
-        self.gain_power_down = GPD
+    def __init__(self, gpt=0.0, gpu=0.0, gpd=0.0):
+        self.gap_power_to_test = gpt
+        self.gain_power_up = gpu
+        self.gain_power_down = gpd
 
-        self.current_time = time.time()  # en seconde
-        self.last_time = self.current_time
-
-        self.power_current = 0.0
-        self.power_tested = 0.0
+        self.power = 0.0 # Puissance en W (watt)
         self.power_last = 0.0
 
-        self.sample_time = 0.00  # en ms
+        self.torque = 0.0  # Couple en Nm
+        self.torque_last = 0.0
 
-        self.torque_setpoint = 0.0  # en Nm
-
-        self.torque_voltage = 0.0
-        self.angular_velocity = 0.0
+        self.torque_voltage = 0.0 # Convertion du couple en voltage en mV
+        self.angular_velocity = 0.0 # Vitesse angulaire en rad/S
 
     def update(self, value):
         """
         Calcul le nouveau couple (Nm) necessaire en fonction de la vitesse angulaire (rad/s)
-                
+
         :param value: Vitesse angulaire (rad/s)
 
         :return: Couple (Nm)
         """
-        self.current_time = time.time()
-        delta_time = self.current_time - self.last_time
 
-        if delta_time >= self.sample_time:
-            # Calculer la puissance actuelle
-            self.power_current = self.torque_setpoint * value
-            # Calculer la puissance réelle (équation caractérisant la turbine)
-            power_real = 1.2 * math.exp(0.45 * value) * value
-            # Déterminer la différence
-            power_gap = power_real - self.power_current
-            # Tester si la puissance actuelle augmentée est plus grande que la puissance précédente
-            if self.power_current + self.gap_power_to_test >= self.power_last:
-                # Calculer la puissance augmentée à tester avec un gain_up
-                self.power_tested = self.power_current + \
-                    (power_gap * self.gain_power_up)
-            else:
-                # Calculer la puissance diminuée à tester avec un gain_down
-                self.power_tested = self.power_current + \
-                    (power_gap * self.gain_power_down)
-            # Limiter la puissance à zéro si vitesse angulaire inférieure à
-            if value < 0.7:
-                self.power_tested = 0
-            # Limiter la puissance à tester à 0 si elle est négative
-            if self.power_tested < 0:
-                self.power_tested = 0
-            # Limiter le couple à zéro si vitesse angulaire est nul ou négative
-            if value <= 0:
-                self.torque_setpoint = 0
-            else:
-                # Calculer le couple à tester
-                self.torque_setpoint = self.power_tested / value
-            # Mémoriser la puissance pour le prochain calcul
-            self.power_last = self.power_current
-            return self.torque_setpoint
+        # Mémoriser la puissance pour le prochain calcul
+        self.torque_last = self.torque
+        # Calculer la puissance actuelle
+        self.power_last = self.torque_last * value
+        # Calculer la puissance réelle (équation caractérisant la turbine)
+        power_real = 1.2 * math.exp(0.45 * value) * value
+        # Déterminer la différence
+        power_gap = power_real - self.power_last
+        # Tester si la puissance actuelle augmentée est plus grande que la puissance précédente
+        if self.power_last + self.gap_power_to_test >= self.power_last:
+            # Calculer la puissance augmentée à tester avec un gain_up
+            self.power = self.power_last + \
+                (power_gap * self.gain_power_up)
+        else:
+            # Calculer la puissance diminuée à tester avec un gain_down
+            self.power = self.power_last + \
+                (power_gap * self.gain_power_down)
+        # Limiter la puissance à zéro si vitesse angulaire inférieure à
+        if value < 0.7:
+            self.power = 0
+        # Limiter la puissance à tester à 0 si elle est négative
+        if self.power < 0:
+            self.power = 0
+        # Limiter le couple à zéro si vitesse angulaire est nul ou négative
+        if value <= 0:
+            self.torque = 0
+        else:
+            # Calculer le couple à tester
+            self.torque = self.power / value
+        return self.torque
 
     def set_gap_power_to_test(self, value):
         """
@@ -115,14 +106,6 @@ class CONTROLEUR:
         """
         self.gain_power_down = value
 
-    def set_sample_time(self, sample_time):
-        """
-        Définir la période de calcul.
-        
-        :param sample_time: en milliseconde (ms)
-        """
-        self.sample_time = sample_time
-
     def to_angular_velocity(self, value):
         """
         Transforme le nombre d'impulsion en une vitesse angulaire (rad/s).
@@ -133,7 +116,8 @@ class CONTROLEUR:
 
         Faire la calibration pour la conversion.
         """
-        result = value
+        # Calculer la vitesse angulaire = 2 x PI x frequence
+        result = 2 * math.pi * value
         self.angular_velocity = result
         return self.angular_velocity
 
