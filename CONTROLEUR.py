@@ -43,8 +43,7 @@ class CONTROLEUR:
         self.angular_velocity = 0.0 # Vitesse angulaire en rad/S
 
     def update(self, value):
-        """
-        Calcul le nouveau couple (Nm) necessaire en fonction de la vitesse angulaire (rad/s)
+        """Calcul le nouveau couple (Nm) necessaire en fonction de la vitesse angulaire (rad/s)
 
         :param value: Vitesse angulaire (rad/s)
 

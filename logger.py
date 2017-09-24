@@ -37,13 +37,12 @@ class LOGGER:
     def __init__(self, time_period=300, name_db="enerall.db"):
         self.items = {}
 
-        self.time_period = time_period #Période pour l'enregistrement des données. Défaut: 5 minutes
+        self.time_period = time_period #Période pour l'enregistrement des données.  Défaut: 5 minutes
         self.name_db = name_db #Nom du fichier de la base de données
 
         self.conn = sqlite3.connect(self.name_db)
         cursor = self.conn.cursor()
-        cursor.execute(
-            """CREATE TABLE IF NOT EXISTS
+        cursor.execute("""CREATE TABLE IF NOT EXISTS
             data (identifier text, time text, avg_value real, min_value real, max_value real)""")
         self.conn.commit()
 
@@ -53,8 +52,7 @@ class LOGGER:
         self.upload_thread.start()
 
     def put(self, identifier, value):
-        """
-        Acquisition des données.
+        """Acquisition des données.
 
         :param identifier: Clé de la donnée
 
@@ -71,8 +69,7 @@ class LOGGER:
             self.items[identifier] = (value, value, value)
 
     def upload(self):
-        """
-        Enregistrer les données dans la base de données toutes les x minutes.
+        """Enregistrer les données dans la base de données toutes les x minutes.
         """
         while True:
             time.sleep(self.time_period)  # Upload data every 5min
@@ -87,8 +84,7 @@ class LOGGER:
                     data = {"identifier": identifier,
                             "avg_value": value[0], "min_value": value[1], "max_value": value[2]}
                     cursor = self.conn.cursor()
-                    cursor.execute(
-                        """INSERT INTO data(identifier, time, avg_value, min_value, max_value)
+                    cursor.execute("""INSERT INTO data(identifier, time, avg_value, min_value, max_value)
                         VALUES(:identifier, datetime('now'), :avg_value, :min_value, :max_value)""", data)
                     self.conn.commit()
                     log.info('Sauvegarde de:' + str(data))
@@ -96,7 +92,7 @@ class LOGGER:
             except sqlite3.OperationalError:
                 log.error('Erreur la table existe déjà')
             except Exception as err:
-                log.error('Error: ' + str(err) +' // '+ str(data))
+                log.error('Error: ' + str(err) + ' // ' + str(data))
                 self.conn.rollback()
             finally:
                 self.conn.close()
