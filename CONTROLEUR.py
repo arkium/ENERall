@@ -131,6 +131,6 @@ class CONTROLEUR:
 
         Faire la calibration pour la conversion.
         """
-        result = value
+        result = (-0.003 * value * value) + (50.266 * value) + 20.504
         self.torque_voltage = result
         return self.torque_voltage
