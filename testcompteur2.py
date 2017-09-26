@@ -35,54 +35,38 @@ UID = "vX8"
 IPCON = None
 DIN = None
 
+compteur = 0
+
 def cd_compte(interrupt_mask, value_mask):
     """Fonction d'appel"""
-    print("Interrupt Mask: " + format(interrupt_mask, "04b"))
-    print("Value Mask: " + format(value_mask, "04b"))
-    print("")
+    if not value_mask & interrupt_mask == 8:
+        compteur += 1
 
+def get_compteur(reset=False):
+    send = compteur
+    if reset:
+        compteur = 0
+    return send
 
 if __name__ == "__main__":
     try:
         print('Start')
         IPCON = IPConnection()
-        log.info('Start Bricklet:')
         DIN = IndustrialDigitalIn4(UID, IPCON)
-        log.info('Connect:')
         IPCON.connect(HOST, PORT)
+        print('Init OK')
         time.sleep(2)
-        text1 = DIN.get_api_version()
-        log.info('API: ' + str(text1))
-        text2 = DIN.get_response_expected(DIN.FUNCTION_SET_EDGE_COUNT_CONFIG)
-        log.info('FUNCTION_SET_EDGE_COUNT_CONFIG: ' + str(text2))
-        text2 = DIN.get_response_expected(DIN.FUNCTION_GET_EDGE_COUNT)
-        log.info('FUNCTION_GET_EDGE_COUNT: ' + str(text2))
-        DIN.set_response_expected(DIN.FUNCTION_SET_EDGE_COUNT_CONFIG, True)
-        text2 = DIN.get_response_expected(DIN.FUNCTION_SET_EDGE_COUNT_CONFIG)
-        log.info('FUNCTION_SET_EDGE_COUNT_CONFIG: ' + str(text2))
-        text2 = DIN.set_edge_count_config(1, 1, 50)
-        log.info('set edge: ' + str(text2))
-        text2 = DIN.get_edge_count_config(1)
-        log.info('Valeur: ' + str(text2))
 
-        DIN.register_callback(DIN.CALLBACK_INTERRUPT, cd_compte)
         DIN.set_interrupt(8)
-        text2 = DIN.get_interrupt()
-        log.info('Interrupt: ' + str(text2))
-
         DIN.set_debounce_period(0)
-
-        while True:
-            time.sleep(2)
-            text1 = DIN.get_edge_count(8, False)
-            text2 = DIN.get_edge_count_config(1)
-            log.info('Valeur: ' + str(text1) + ' ' + str(text2))
-            text2 = DIN.get_response_expected(DIN.FUNCTION_SET_EDGE_COUNT_CONFIG)
-            log.info('FUNCTION_SET_EDGE_COUNT_CONFIG: ' + str(text2))
+        DIN.register_callback(DIN.CALLBACK_INTERRUPT, cd_compte)
 
         input('Press')
+
+        print(get_compteur(False))
+
     except Error as err:
         log.error('Connection Error: ' + str(err.description))
         time.sleep(1)
-        
+
     IPCON.disconnect()

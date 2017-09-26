@@ -46,7 +46,7 @@ log.basicConfig(level=log.INFO)
 class DataENERall:
     """Classe de régulation du projet ENERall
     """
-    HOST = "192.168.42.1" #192.168.42.1 ou localhost
+    HOST = "localhost" #192.168.42.1 ou localhost
     PORT = 4223
     ipcon = None
 
@@ -60,7 +60,12 @@ class DataENERall:
     aout = None
     din = None
 
-    time_calcul = 1
+    time_calcul = 2
+
+    compteur_turbine = 0
+
+    din_connected = False
+    aout_connected = False
 
     def __init__(self):
         self.ctrl = PID.CONTROLEUR(0.01, 0.5, 0.1)
@@ -92,42 +97,44 @@ class DataENERall:
                 log.error('Enumerate Error: ' + str(err.description))
                 time.sleep(1)
 
-        if self.aout.is_enabled and not self.din:
-            log.info('Start controleur')
-            self.ctrl_thread = threading.Thread(target=self.cb_controleur)
-            self.ctrl_thread.daemon = True
-            self.ctrl_thread.start()
-        else:
-            log.info('Error start controleur')
+        time.sleep(5)
+        self.ctrl_thread = threading.Thread(target=self.cb_controleur)
+        self.ctrl_thread.daemon = True
+        self.ctrl_thread.start()
 
     def cb_controleur(self):
         """
         Controleur callback
         """
-        # Calculer le couple toute les x secondes selon time_calcul
-        time.sleep(self.time_calcul)
-
-        # Récupérer valeur compteur pin 3 et mettre à zéro
-        # Calculer la fréquence en fonction du time_calcul
-        frequence = self.din.get_edge_count(8, True) / self.time_calcul
-        # Convertir fréquence en vitesse angulaire
-        self.ctrl.to_angular_velocity(frequence)
-        # Calculer le couple nécessaire
-        self.ctrl.update(self.ctrl.angular_velocity)
-        # Convertir Couple en Voltage
-        self.ctrl.torque_to_voltage(self.ctrl.torque)
-        # Envoyer le nouveau voltage
-        self.aout.set_voltage(self.ctrl.torque_voltage)
-        # Enregistrer les données
-        self.logger.put('Torque', self.ctrl.torque)
-        self.logger.put('Angular', self.ctrl.angular_velocity)
-        self.logger.put('Power', self.ctrl.power)
-        self.logger.put('Frequence', frequence)
-        text = 'Torque %7.2f ' % self.ctrl.torque
-        text = text + 'Angular velocity %7.2f ' % self.ctrl.angular_velocity
-        text = text + 'Power %7.2f ' % self.ctrl.power
-        text = text + 'Frequence %7.2f ' % frequence
-        log.info(text)
+        print('Start controleur')
+        while True:
+            # Calculer le couple toute les x secondes selon time_calcul
+            time.sleep(self.time_calcul)
+            if self.aout_connected and self.din_connected:
+                # Récupérer valeur compteur pin 3 et mettre à zéro
+                # Calculer la fréquence en fonction du time_calcul
+                frequence = self.get_compteur(True) / self.time_calcul
+                # Convertir fréquence en vitesse angulaire
+                self.ctrl.to_angular_velocity(frequence)
+                # Calculer le couple nécessaire
+                self.ctrl.update(self.ctrl.angular_velocity)
+                # Convertir Couple en Voltage
+                self.ctrl.torque_to_voltage(self.ctrl.torque)
+                # Envoyer le nouveau voltage
+                self.aout.set_voltage(self.ctrl.torque_voltage)
+                # Enregistrer les données
+                self.logger.put('Torque', self.ctrl.torque)
+                self.logger.put('Angular', self.ctrl.angular_velocity)
+                self.logger.put('Power', self.ctrl.power)
+                self.logger.put('Frequence', frequence)
+                text = 'Torque %7.2f ' % self.ctrl.torque
+                text = text + 'Angular velocity %7.2f ' % self.ctrl.angular_velocity
+                text = text + 'Power %7.2f ' % self.ctrl.power
+                text = text + 'Frequence %7.2f ' % frequence
+                text = text + 'voltage %7.2f ' % self.ctrl.torque_voltage
+                print(text)
+            else:
+                print('Error start controleur: ' + str(self.aout_connected) + ' ' + str(self.din_connected))
 
     def cb_temperature(self, temperature):
         """
@@ -156,6 +163,24 @@ class DataENERall:
         text = text + "Accel[Y]: " + str(ydata / 1000.0) + " g "
         text = text + "Accel[Z]: " + str(zdata / 1000.0) + " g"
         log.info(text)
+
+    def cb_compteur_turbine(self, interrupt_mask, value_mask):
+        """
+        Comptage du nombre de tours callback
+        """
+        #log.info(str(value_mask) + ' ' + str(interrupt_mask))
+        if (value_mask == 0) and (interrupt_mask == 8):
+            self.compteur_turbine += 1
+        #log.info(str(self.compteur))
+
+    def get_compteur(self, reset = False):
+        """
+        Renvoi le nombre de tours et remettre à zéro le compteur si nécessaire
+        """
+        total = self.compteur_turbine
+        if reset:
+            self.compteur_turbine = 0
+        return total
 
     def cb_enumerate(self, uid, connected_uid, position, hardware_version, firmware_version, device_identifier, enumeration_type):
         """
@@ -210,6 +235,7 @@ class DataENERall:
                     self.aout.set_configuration(
                         self.aout.VOLTAGE_RANGE_0_TO_5V, self.aout.CURRENT_RANGE_0_TO_20MA)
                     self.aout.enable()
+                    self.aout_connected = True
                     log.info('IndustrialAnalogOut initialized')
                 except Error as err:
                     log.error('IndustrialAnalogOut init failed: ' +
@@ -218,8 +244,10 @@ class DataENERall:
             elif device_identifier == IndustrialDigitalIn4.DEVICE_IDENTIFIER:
                 try:
                     self.din = IndustrialDigitalIn4(uid, self.ipcon)
-                    # pin3, falling, 0ms debounce
-                    self.din.set_edge_count_config(8, 1, 0)
+                    self.din.set_interrupt(8)
+                    self.din.set_debounce_period(0)
+                    self.din.register_callback(self.din.CALLBACK_INTERRUPT, self.cb_compteur_turbine)
+                    self.din_connected = True
                     log.info('IndustrialDigitalIn4 initialized')
                 except Error as err:
                     log.error('IndustrialDigitalIn4 init failed: ' +
@@ -247,9 +275,7 @@ if __name__ == "__main__":
 
     COM = DataENERall()
 
-    if sys.version_info < (3, 0):
-        INPUT = raw_input # Compatibility for Python 2.x
-    INPUT('Press key to exit\n')
+    input('Press key to exit\n')
 
     if COM.ipcon != None:
         COM.ipcon.disconnect()

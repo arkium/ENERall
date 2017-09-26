@@ -35,14 +35,14 @@ class DataENERall:
     """
     Classe de test pour compter le nombre d'impulsion.
     """
-    HOST = "192.168.42.1"
+    HOST = "localhost" #192.168.42.1
     PORT = 4223
 
     ipcon = None
     din = None
     compte_thread = None
 
-    compteur = 0
+    compteur_turbine = 0
 
     def __init__(self):
         self.ipcon = IPConnection()
@@ -73,24 +73,25 @@ class DataENERall:
                 log.error('Enumerate Error: ' + str(err.description))
                 time.sleep(1)
 
-        log.info('Pile compteur')
-        self.compte_thread = threading.Thread(target=self.cb_compteur)
-        self.compte_thread.daemon = False
-        self.compte_thread.start()
+        #log.info('Pile compteur')
+        #self.compte_thread = threading.Thread(target=self.cb_compteur)
+        #self.compte_thread.daemon = False
+        #self.compte_thread.start()
 
-    def cb_compteur(self):
+    def cb_compteur_turbine(self, interrupt_mask, value_mask):
         """
-        Compteur callback
+        Comptage du nombre de tours callback
         """
-        # pin3, falling, 0ms debounce
-        #self.din.set_edge_count_config(8, 1, 1)
-        while True:
-            time.sleep(10)  # Affiche le compteur toutes les 10 secondes
-            # Récupérer valeur compteur pin 3 et mettre à zéro
-            text = self.din.get_edge_count(8, False)
-            text2 = self.din.get_value()
-            text3 = self.din.get_edge_count_config(8)
-            log.info("Compteur:" + str(text)  + ' ' + str(text2) + ' ' + str(text3))
+        #log.info(str(value_mask) + ' ' + str(interrupt_mask))
+        if (value_mask == 0) and (interrupt_mask == 8):
+            self.compteur_turbine += 1
+        #log.info(str(self.compteur))
+
+    def get_compteur(self, reset = False):
+        total = self.compteur_turbine
+        if reset:
+            self.compteur_turbine = 0
+        return total
 
     def cb_enumerate(self, uid, connected_uid, position, hardware_version, firmware_version, device_identifier, enumeration_type):
         """
@@ -101,10 +102,9 @@ class DataENERall:
             if device_identifier == IndustrialDigitalIn4.DEVICE_IDENTIFIER:
                 try:
                     self.din = IndustrialDigitalIn4(uid, self.ipcon)
-                    time.sleep(2)
-                    # pin3, falling, 0ms debounce
-                    self.din.set_edge_count_config(8, 1, 0)
-                    log.info('Config: ' + str(self.din.get_edge_count_config(8)))
+                    self.din.set_interrupt(8)
+                    self.din.set_debounce_period(0)
+                    self.din.register_callback(self.din.CALLBACK_INTERRUPT, self.cb_compteur_turbine)
                     log.info('IndustrialDigitalIn4 initialized')
                 except Error as err:
                     log.error('IndustrialDigitalIn4 init failed: ' +
@@ -132,6 +132,12 @@ if __name__ == "__main__":
 
     COM = DataENERall()
 
+    time.sleep(5)
+    print(str(COM.compteur_turbine))
+    time.sleep(5)
+    print(COM.get_compteur(True))
+    time.sleep(5)
+    print(COM.get_compteur(True))
     input('Press key to exit\n')
 
     if COM.ipcon != None:
