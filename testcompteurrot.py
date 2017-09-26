@@ -22,7 +22,6 @@ Module pour tester le compteur d'impulsion sur l'arbre du frein.
 
 import logging as log
 import socket
-import sys
 import threading
 import time
 
@@ -41,11 +40,13 @@ class DataENERall:
 
     ipcon = None
     din = None
+    compte_thread = None
 
     compteur = 0
 
     def __init__(self):
         self.ipcon = IPConnection()
+        #self.compte_thread = None
         while True:
             try:
                 self.ipcon.connect(self.HOST, self.PORT)
@@ -72,18 +73,24 @@ class DataENERall:
                 log.error('Enumerate Error: ' + str(err.description))
                 time.sleep(1)
 
+        log.info('Pile compteur')
         self.compte_thread = threading.Thread(target=self.cb_compteur)
-        self.compte_thread.daemon = True
+        self.compte_thread.daemon = False
         self.compte_thread.start()
 
     def cb_compteur(self):
         """
         Compteur callback
         """
-        time.sleep(10)  # Affiche le compteur toutes les 10 secondes
-        # Récupérer valeur compteur pin 3 et mettre à zéro
-        text = self.din.get_edge_count(8, True)
-        log.info("Compteur:" + str(text))
+        # pin3, falling, 0ms debounce
+        #self.din.set_edge_count_config(8, 1, 1)
+        while True:
+            time.sleep(10)  # Affiche le compteur toutes les 10 secondes
+            # Récupérer valeur compteur pin 3 et mettre à zéro
+            text = self.din.get_edge_count(8, False)
+            text2 = self.din.get_value()
+            text3 = self.din.get_edge_count_config(8)
+            log.info("Compteur:" + str(text)  + ' ' + str(text2) + ' ' + str(text3))
 
     def cb_enumerate(self, uid, connected_uid, position, hardware_version, firmware_version, device_identifier, enumeration_type):
         """
@@ -94,8 +101,10 @@ class DataENERall:
             if device_identifier == IndustrialDigitalIn4.DEVICE_IDENTIFIER:
                 try:
                     self.din = IndustrialDigitalIn4(uid, self.ipcon)
+                    time.sleep(2)
                     # pin3, falling, 0ms debounce
                     self.din.set_edge_count_config(8, 1, 0)
+                    log.info('Config: ' + str(self.din.get_edge_count_config(8)))
                     log.info('IndustrialDigitalIn4 initialized')
                 except Error as err:
                     log.error('IndustrialDigitalIn4 init failed: ' +
@@ -123,9 +132,7 @@ if __name__ == "__main__":
 
     COM = DataENERall()
 
-    if sys.version_info < (3, 0):
-        INPUT = raw_input  # Compatibility for Python 2.x
-    INPUT('Press key to exit\n')
+    input('Press key to exit\n')
 
     if COM.ipcon != None:
         COM.ipcon.disconnect()
