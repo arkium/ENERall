@@ -24,7 +24,6 @@ Version 0.1
 
 import logging as log
 import socket
-import sys
 import threading
 import time
 
@@ -36,7 +35,7 @@ from tinkerforge.bricklet_sound_intensity import SoundIntensity
 from tinkerforge.bricklet_temperature import Temperature
 from tinkerforge.ip_connection import Error, IPConnection
 
-import controleur as PID
+import CONTROLEUR as PID
 
 import logger
 
@@ -60,9 +59,9 @@ class DataENERall:
     aout = None
     din = None
 
-    time_calcul = 2
+    time_calcul = 2 # en seconde
 
-    compteur_turbine = 0
+    compteur_turbine = 0 # Compteur de la turbine
 
     din_connected = False
     aout_connected = False
@@ -106,14 +105,14 @@ class DataENERall:
         """
         Controleur callback
         """
-        print('Start controleur')
+        print('Start controleur after 5 secondes')
         while True:
             # Calculer le couple toute les x secondes selon time_calcul
             time.sleep(self.time_calcul)
             if self.aout_connected and self.din_connected:
                 # Récupérer valeur compteur pin 3 et mettre à zéro
                 # Calculer la fréquence en fonction du time_calcul
-                frequence = self.get_compteur(True) / self.time_calcul
+                frequence = ((self.get_compteur(True)/23) / self.time_calcul) # 1 tr/s = 1Hz
                 # Convertir fréquence en vitesse angulaire
                 self.ctrl.to_angular_velocity(frequence)
                 # Calculer le couple nécessaire
@@ -127,14 +126,14 @@ class DataENERall:
                 self.logger.put('Angular', self.ctrl.angular_velocity)
                 self.logger.put('Power', self.ctrl.power)
                 self.logger.put('Frequence', frequence)
-                text = 'Torque %7.2f ' % self.ctrl.torque
-                text = text + 'Angular velocity %7.2f ' % self.ctrl.angular_velocity
-                text = text + 'Power %7.2f ' % self.ctrl.power
-                text = text + 'Frequence %7.2f ' % frequence
-                text = text + 'voltage %7.2f ' % self.ctrl.torque_voltage
+                text = 'Torque (Nm) %7.2f ' % self.ctrl.torque
+                text = text + 'Angular velocity (ms) %7.2f ' % self.ctrl.angular_velocity
+                text = text + 'Power (W) %7.2f ' % self.ctrl.power
+                text = text + 'Frequence (Hz) %7.2f ' % frequence
+                text = text + 'Voltage (mV) %7.0f ' % self.ctrl.torque_voltage
                 print(text)
             else:
-                print('Error start controleur: ' + str(self.aout_connected) + ' ' + str(self.din_connected))
+                print('Error in controleur: ' + str(self.aout_connected) + ' ' + str(self.din_connected))
 
     def cb_temperature(self, temperature):
         """
@@ -169,7 +168,8 @@ class DataENERall:
         Comptage du nombre de tours callback
         """
         #log.info(str(value_mask) + ' ' + str(interrupt_mask))
-        if (value_mask == 0) and (interrupt_mask == 8):
+        #if (value_mask == 1) and (interrupt_mask == 8):
+        if ((value_mask & 8) == 0) and ((interrupt_mask & 8) == 8):
             self.compteur_turbine += 1
         #log.info(str(self.compteur))
 

@@ -82,10 +82,10 @@ class DataENERall:
         """
         Comptage du nombre de tours callback
         """
-        #log.info(str(value_mask) + ' ' + str(interrupt_mask))
-        if (value_mask == 0) and (interrupt_mask == 8):
+        print(str(value_mask) + ' ' + str(interrupt_mask))
+        if (value_mask == 1) and (interrupt_mask == 8):
             self.compteur_turbine += 1
-        #log.info(str(self.compteur))
+        print(str(self.compteur_turbine))
 
     def get_compteur(self, reset = False):
         total = self.compteur_turbine
