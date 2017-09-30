@@ -20,6 +20,7 @@
 Module de régulation du projet ENERall.
 
 Version 0.1
+
 """
 
 import logging as log
@@ -167,11 +168,12 @@ class DataENERall:
         """
         Comptage du nombre de tours callback
         """
-        #log.info(str(value_mask) + ' ' + str(interrupt_mask))
-        #if (value_mask == 1) and (interrupt_mask == 8):
-        if ((value_mask & 8) == 0) and ((interrupt_mask & 8) == 8):
+        #log.info('Masque: ' + str(value_mask) + ' ' + str(interrupt_mask))
+        #log.info('Masque and: ' + str(value_mask & 8) + ' ' + str(interrupt_mask & 8))
+        #if (value_mask == 0) and (interrupt_mask == 8):
+        if ((value_mask & 8) == 8) and ((interrupt_mask & 8) == 8): #pin3 = 8 sur front montant
             self.compteur_turbine += 1
-        #log.info(str(self.compteur))
+        #log.info(str(self.compteur_turbine))
 
     def get_compteur(self, reset = False):
         """
