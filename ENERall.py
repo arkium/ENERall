@@ -16,12 +16,9 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA.
 
-"""
-Module de régulation du projet ENERall.
+"""Module de régulation du projet ENERall.
 
-Version 0.1
-
-"""
+Version 0.1"""
 
 import logging as log
 import socket
@@ -44,8 +41,8 @@ log.basicConfig(level=log.INFO)
 
 
 class DataENERall:
-    """Classe de régulation du projet ENERall
-    """
+    """Classe de régulation du projet ENERall"""
+
     HOST = "localhost" #192.168.42.1 ou localhost
     PORT = 4223
     ipcon = None
@@ -77,13 +74,13 @@ class DataENERall:
         while True:
             try:
                 self.ipcon.connect(self.HOST, self.PORT)
-                log.info('TCP/IP connection')
+                log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' TCP/IP connection')
                 break
             except Error as err:
-                log.error('Connection Error: ' + str(err.description))
+                log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Connection Error: ' + str(err.description))
                 time.sleep(1)
             except socket.error as err:
-                log.error('Socket error: ' + str(err))
+                log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Socket error: ' + str(err))
                 time.sleep(1)
 
         self.ipcon.register_callback(
@@ -94,22 +91,21 @@ class DataENERall:
         while True:
             try:
                 self.ipcon.enumerate()
-                log.info('Calling all Bricklets')
+                log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' Calling all Bricklets')
                 break
             except Error as err:
-                log.error('Enumerate Error: ' + str(err.description))
+                log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Enumerate Error: ' + str(err.description))
                 time.sleep(1)
 
-        time.sleep(5)
+        time.sleep(5) # Attendre 5 secondes avant de lancer le contrôleur
         self.ctrl_thread = threading.Thread(target=self.cb_controleur)
         self.ctrl_thread.daemon = True
         self.ctrl_thread.start()
 
     def cb_controleur(self):
-        """
-        Controleur callback
-        """
-        log.info('Start controleur after 5 secondes')
+        """Controleur callback"""
+
+        log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' Start controleur after 5 secondes')
         while True:
             # Calculer le couple toute les x secondes selon time_calcul
             time.sleep(self.time_calcul)
@@ -136,6 +132,7 @@ class DataENERall:
                 self.logger.put('AccelX', x / 1000.0)
                 self.logger.put('AccelY', y / 1000.0)
                 self.logger.put('AccelZ', z / 1000.0)
+                # Afficher pour le debug
                 if self.debug:
                     text = 'Torque (Nm) %7.2f ' % self.ctrl.torque
                     text = text + 'Angular velocity (ms) %7.2f ' % self.ctrl.angular_velocity
@@ -144,28 +141,25 @@ class DataENERall:
                     text = text + 'Voltage (mV) %7.0f ' % self.ctrl.torque_voltage
                     print(text)
             else:
-                log.error('Error in controleur: ' + str(self.aout_connected) + ' ' + str(self.din_connected))
+                log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Error in controleur: ' + str(self.aout_connected) + ' ' + str(self.din_connected))
 
     #def cb_temperature(self, temperature):
-    #    """
-    #    Temperature callback
-    #    """
+    #    """Temperature callback"""
+
     #    self.logger.put('Temperature', temperature / 100.0)
     #    text = 'Temperature %7.2f ?C' % (temperature / 100.0)
     #    log.info(text)
 
     #def cb_sound(self, intensity):
-    #    """
-    #    Sound callback
-    #    """
+    #    """Sound callback"""
+
     #    self.logger.put('Intensity', intensity)
     #    text = 'Intensity %7.2f' % (intensity)
     #    log.info(text)
 
     #def cb_accelerometer(self, xdata, ydata, zdata):
-    #    """
-    #    Accelerometer callback
-    #    """
+    #    """Accelerometer callback"""
+
     #    self.logger.put('AccelX', xdata / 1000.0)
     #    self.logger.put('AccelY', ydata / 1000.0)
     #    self.logger.put('AccelZ', zdata / 1000.0)
@@ -175,9 +169,8 @@ class DataENERall:
     #    log.info(text)
 
     def cb_compteur_turbine(self, interrupt_mask, value_mask):
-        """
-        Comptage du nombre de tours callback
-        """
+        """Comptage du nombre de tours callback."""
+
         #log.info('Masque: ' + str(value_mask) + ' ' + str(interrupt_mask))
         #log.info('Masque and: ' + str(value_mask & 8) + ' ' + str(interrupt_mask & 8))
         #if (value_mask == 0) and (interrupt_mask == 8):
@@ -186,18 +179,16 @@ class DataENERall:
         #log.info(str(self.compteur_turbine))
 
     def get_compteur(self, reset = False):
-        """
-        Renvoi le nombre de tours et remettre à zéro le compteur si nécessaire
-        """
+        """Renvoi le nombre de tours et remettre à zéro le compteur si nécessaire."""
+
         total = self.compteur_turbine
         if reset:
             self.compteur_turbine = 0
         return total
 
     def cb_enumerate(self, uid, connected_uid, position, hardware_version, firmware_version, device_identifier, enumeration_type):
-        """
-        Recherche des brickets et configuration.
-        """
+        """Recherche des brickets et configuration."""
+
         if enumeration_type == IPConnection.ENUMERATION_TYPE_CONNECTED or \
            enumeration_type == IPConnection.ENUMERATION_TYPE_AVAILABLE:
             if device_identifier == Temperature.DEVICE_IDENTIFIER:
@@ -205,9 +196,9 @@ class DataENERall:
                     self.temp = Temperature(uid, self.ipcon)
                     #self.temp.set_temperature_callback_period(1000)
                     #self.temp.register_callback(self.temp.CALLBACK_TEMPERATURE, self.cb_temperature)
-                    log.info('Temperature initialized')
+                    log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' Temperature initialized')
                 except Error as err:
-                    log.error('Temperature init failed: ' +
+                    log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Temperature init failed: ' +
                               str(err.description))
                     self.temp = None
             elif device_identifier == SoundIntensity.DEVICE_IDENTIFIER:
@@ -215,9 +206,9 @@ class DataENERall:
                     self.sound = SoundIntensity(uid, self.ipcon)
                     #self.sound.set_intensity_callback_period(1000)
                     #self.sound.register_callback(self.sound.CALLBACK_INTENSITY, self.cb_sound)
-                    log.info('Sound intensity initialized')
+                    log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' Sound intensity initialized')
                 except Error as err:
-                    log.error('Sound intensity init failed: ' +
+                    log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Sound intensity init failed: ' +
                               str(err.description))
                     self.sound = None
             elif device_identifier == Accelerometer.DEVICE_IDENTIFIER:
@@ -225,9 +216,9 @@ class DataENERall:
                     self.accel = Accelerometer(uid, self.ipcon)
                     #self.accel.set_acceleration_callback_period(1000)
                     #self.accel.register_callback(self.accel.CALLBACK_ACCELERATION, self.cb_accelerometer)
-                    log.info('Accelerometer initialized')
+                    log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' Accelerometer initialized')
                 except Error as err:
-                    log.error('Accelerometer init failed: ' +
+                    log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Accelerometer init failed: ' +
                               str(err.description))
                     self.accel = None
             #elif device_identifier == RealTimeClock.DEVICE_IDENTIFIER:
@@ -244,9 +235,9 @@ class DataENERall:
                     self.aout.set_configuration(self.aout.VOLTAGE_RANGE_0_TO_5V, self.aout.CURRENT_RANGE_0_TO_20MA)
                     self.aout.enable()
                     self.aout_connected = True
-                    log.info('IndustrialAnalogOut initialized')
+                    log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' IndustrialAnalogOut initialized')
                 except Error as err:
-                    log.error('IndustrialAnalogOut init failed: ' +
+                    log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' IndustrialAnalogOut init failed: ' +
                               str(err.description))
                     self.aout = None
             elif device_identifier == IndustrialDigitalIn4.DEVICE_IDENTIFIER:
@@ -256,36 +247,35 @@ class DataENERall:
                     self.din.set_debounce_period(0)
                     self.din.register_callback(self.din.CALLBACK_INTERRUPT, self.cb_compteur_turbine)
                     self.din_connected = True
-                    log.info('IndustrialDigitalIn4 initialized')
+                    log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' IndustrialDigitalIn4 initialized')
                 except Error as err:
-                    log.error('IndustrialDigitalIn4 init failed: ' +
+                    log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' IndustrialDigitalIn4 init failed: ' +
                               str(err.description))
                     self.din = None
 
     def cb_connected(self, connected_reason):
-        """
-        Connection aux bricks
-        """
+        """Connection aux bricks."""
+
         if connected_reason == IPConnection.CONNECT_REASON_AUTO_RECONNECT:
-            log.info('Auto Reconnect')
+            log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' Auto Reconnect')
 
             while True:
                 try:
                     self.ipcon.enumerate()
                     break
                 except Error as err:
-                    log.error('Enumerate Error: ' + str(err.description))
+                    log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Enumerate Error: ' + str(err.description))
                     time.sleep(1)
 
 
 if __name__ == "__main__":
-    log.info('ENERall: Start')
+    log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' ENERall: Start')
 
     COM = DataENERall()
 
-    input('Press key to exit\n')
+    input(time.strftime("%Y-%m-%d %H:%M:%S") + ' Press key to exit\n')
 
     if COM.ipcon != None:
         COM.ipcon.disconnect()
 
-    log.info('ENERall: End')
+    log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' ENERall: End')

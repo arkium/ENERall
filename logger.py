@@ -16,9 +16,7 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA.
 
-"""
-Module pour l'enregistrement des données dans une base de données sqlite.
-"""
+"""Module pour l'enregistrement des données dans une base de données sqlite."""
 
 import logging as log
 import sqlite3
@@ -27,11 +25,10 @@ import time
 
 
 class LOGGER:
-    """
-    Classe d'enregistrement des données dans une base de données locale sqlite.
+    """Classe d'enregistrement des données dans une base de données locale sqlite.
 
-    Nom du fichier : enerall.db
-    """
+    Nom du fichier : enerall.db"""
+
     conn = None
 
     def __init__(self, time_period=300, name_db="enerall.db"):
@@ -46,7 +43,7 @@ class LOGGER:
             data (identifier text, time text, avg_value real, min_value real, max_value real)""")
         self.conn.commit()
 
-        log.info('Start controleur')
+        log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' Start logger')
         self.upload_thread = threading.Thread(target=self.upload)
         self.upload_thread.daemon = True
         self.upload_thread.start()
@@ -56,8 +53,8 @@ class LOGGER:
 
         :param identifier: Clé de la donnée
 
-        :param value: Valeur de la donnée
-        """
+        :param value: Valeur de la donnée"""
+
         try:
             sum_value, min_value, max_value, count_value = self.items[identifier]
             sum_value = sum_value + value
@@ -71,8 +68,8 @@ class LOGGER:
             self.items[identifier] = (value, value, value, 0)
 
     def upload(self):
-        """Enregistrer les données dans la base de données toutes les x minutes.
-        """
+        """Enregistrer les données dans la base de données toutes les x minutes."""
+
         while True:
             time.sleep(self.time_period)  # Upload data every 5min
             result = len(self.items)
@@ -80,7 +77,7 @@ class LOGGER:
                 continue
 
             try:
-                log.info('sqlite3 connection: ' + self.name_db)
+                log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' sqlite3 connection: ' + self.name_db)
                 self.conn = sqlite3.connect(self.name_db)
                 for identifier, value in self.items.items():
                     avg_value = value[0] / value[3]
@@ -91,31 +88,27 @@ class LOGGER:
                     cursor.execute("""INSERT INTO data(identifier, time, avg_value, min_value, max_value)
                         VALUES(:identifier, datetime('now'), :avg_value, :min_value, :max_value)""", data)
                     self.conn.commit()
-                    log.info('Sauvegarde de:' + str(data))
+                    log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' Sauvegarde de:' + str(data))
 
-            except sqlite3.OperationalError:
-                log.error('Erreur la table existe déjà')
             except Exception as err:
-                log.error('Error: ' + str(err) + ' // ' + str(data))
+                log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Error: ' + str(err) + ' // ' + str(data))
                 self.conn.rollback()
             finally:
                 self.conn.close()
-                log.info('sqlite3 close')
+                log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' sqlite3 close')
 
             self.items = {}
 
     def set_time_period(self, value):
-        """
-        Définir la période pour l'enregistrement des données.
+        """Définir la période pour l'enregistrement des données.
 
-        :param value: integer en seconde
-        """
+        :param value: integer en seconde"""
+
         self.time_period = value
 
     def set_name_db(self, value):
-        """
-        Définir le nom du fichier de la base de données en sqlite.
+        """Définir le nom du fichier de la base de données en sqlite.
 
-        :param value: string
-        """
+        :param value: string"""
+
         self.name_db = value

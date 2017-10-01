@@ -16,17 +16,15 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA.
 
-"""
-Module de régulation cherchant à obtenir la puissance max.
+"""Module de régulation cherchant à obtenir la puissance max.
 
-Version 0.1
-"""
+Version 0.1"""
 
 import math
 
 
 class CONTROLEUR:
-    """Controleur cherchant à obtenir la puissance max"""
+    """Contrôleur cherchant à obtenir la puissance maximum."""
 
     def __init__(self, gpt=0.0, gpu=0.0, gpd=0.0):
         self.gap_power_to_test = gpt
@@ -47,8 +45,7 @@ class CONTROLEUR:
 
         :param value: Vitesse angulaire (rad/s)
 
-        :return: Couple (Nm)
-        """
+        :return: Couple (Nm)"""
 
         # Mémoriser la puissance pour le prochain calcul
         self.torque_last = self.torque
@@ -82,54 +79,49 @@ class CONTROLEUR:
         return self.torque
 
     def set_gap_power_to_test(self, value):
-        """
-        Définir la valeur à augmenter la puissance actuelle.
+        """Définir la valeur à augmenter la puissance actuelle.
 
-        :param value: floating
-        """
+        :param value: floating"""
+
         self.gap_power_to_test = value
 
     def set_gain_power_up(self, value):
-        """
-        Définir le gain pour augmenter la puissance.
+        """Définir le gain pour augmenter la puissance.
 
-        :param value: floating
-        """
+        :param value: floating"""
+
         self.gain_power_up = value
 
     def set_gain_power_down(self, value):
-        """
-        Définir le gain pour diminuer la puissance.
+        """Définir le gain pour diminuer la puissance.
+        
+        :param value: floating"""
 
-        :param value: floating
-        """
         self.gain_power_down = value
 
     def to_angular_velocity(self, value):
-        """
-        Transforme le nombre d'impulsion en une vitesse angulaire (rad/s).
+        """Transforme le nombre d'impulsion en une vitesse angulaire (rad/s).
+
+        :formule: 2 x PI x frequence (Hz) = rad/s
 
         :param value: Nombre d'impulsion (en Hz)
 
-        :return: Vitesse angualire (en rad/s)
+        :return: Vitesse angualire (en rad/s)"""
 
-        Faire la calibration pour la conversion.
-        """
         # Calculer la vitesse angulaire = 2 x PI x frequence (Hz)
         result = 2 * math.pi * value
         self.angular_velocity = result
         return self.angular_velocity
 
     def torque_to_voltage(self, value):
-        """
-        Transforme le couple (Nm) en une tension (mV).
+        """Transforme le couple (Nm) en une tension (mV).
 
         :param value: Couple (en Nm)
 
-        :return: Tension (en mV)
+        :return: Tension (en mV) de 0 à 5000mV max
 
-        Faire la calibration pour la conversion.
-        """
+        Faire la calibration pour la conversion."""
+
         result = (-0.003 * value * value) + (50.266 * value) + 20.504
         # Limiter la tension à 5V = 5000mV
         if result > 5000:
