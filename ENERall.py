@@ -73,6 +73,7 @@ class DataENERall:
         self.ctrl = PID.CONTROLEUR(0.01, 0.5, 0.1)
         self.logger = loggerData.LOGGER() #Enregistrement tous les 5 minutes (300s)
         self.ipcon = IPConnection()
+
         while True:
             try:
                 self.ipcon.connect(self.HOST, self.PORT)
@@ -145,33 +146,33 @@ class DataENERall:
             else:
                 log.error('Error in controleur: ' + str(self.aout_connected) + ' ' + str(self.din_connected))
 
-    def cb_temperature(self, temperature):
-        """
-        Temperature callback
-        """
-        self.logger.put('Temperature', temperature / 100.0)
-        text = 'Temperature %7.2f ?C' % (temperature / 100.0)
-        log.info(text)
+    #def cb_temperature(self, temperature):
+    #    """
+    #    Temperature callback
+    #    """
+    #    self.logger.put('Temperature', temperature / 100.0)
+    #    text = 'Temperature %7.2f ?C' % (temperature / 100.0)
+    #    log.info(text)
 
-    def cb_sound(self, intensity):
-        """
-        Sound callback
-        """
-        self.logger.put('Intensity', intensity)
-        text = 'Intensity %7.2f' % (intensity)
-        log.info(text)
+    #def cb_sound(self, intensity):
+    #    """
+    #    Sound callback
+    #    """
+    #    self.logger.put('Intensity', intensity)
+    #    text = 'Intensity %7.2f' % (intensity)
+    #    log.info(text)
 
-    def cb_accelerometer(self, xdata, ydata, zdata):
-        """
-        Accelerometer callback
-        """
-        self.logger.put('AccelX', xdata / 1000.0)
-        self.logger.put('AccelY', ydata / 1000.0)
-        self.logger.put('AccelZ', zdata / 1000.0)
-        text = "Accel[X]: " + str(xdata / 1000.0) + " g "
-        text = text + "Accel[Y]: " + str(ydata / 1000.0) + " g "
-        text = text + "Accel[Z]: " + str(zdata / 1000.0) + " g"
-        log.info(text)
+    #def cb_accelerometer(self, xdata, ydata, zdata):
+    #    """
+    #    Accelerometer callback
+    #    """
+    #    self.logger.put('AccelX', xdata / 1000.0)
+    #    self.logger.put('AccelY', ydata / 1000.0)
+    #    self.logger.put('AccelZ', zdata / 1000.0)
+    #    text = "Accel[X]: " + str(xdata / 1000.0) + " g "
+    #    text = text + "Accel[Y]: " + str(ydata / 1000.0) + " g "
+    #    text = text + "Accel[Z]: " + str(zdata / 1000.0) + " g"
+    #    log.info(text)
 
     def cb_compteur_turbine(self, interrupt_mask, value_mask):
         """
@@ -229,14 +230,14 @@ class DataENERall:
                     log.error('Accelerometer init failed: ' +
                               str(err.description))
                     self.accel = None
-            elif device_identifier == RealTimeClock.DEVICE_IDENTIFIER:
-                try:
-                    self.clock = RealTimeClock(uid, self.ipcon)
-                    log.info('RealTimeClock initialized')
-                except Error as err:
-                    log.error('RealTimeClock init failed: ' +
-                              str(err.description))
-                    self.clock = None
+            #elif device_identifier == RealTimeClock.DEVICE_IDENTIFIER:
+            #    try:
+            #        self.clock = RealTimeClock(uid, self.ipcon)
+            #        log.info('RealTimeClock initialized')
+            #    except Error as err:
+            #        log.error('RealTimeClock init failed: ' +
+            #                  str(err.description))
+            #        self.clock = None
             elif device_identifier == IndustrialAnalogOut.DEVICE_IDENTIFIER:
                 try:
                     self.aout = IndustrialAnalogOut(uid, self.ipcon)
