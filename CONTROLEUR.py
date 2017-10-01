@@ -115,7 +115,7 @@ class CONTROLEUR:
 
         Faire la calibration pour la conversion.
         """
-        # Calculer la vitesse angulaire = 2 x PI x frequence
+        # Calculer la vitesse angulaire = 2 x PI x frequence (Hz)
         result = 2 * math.pi * value
         self.angular_velocity = result
         return self.angular_velocity
@@ -131,5 +131,8 @@ class CONTROLEUR:
         Faire la calibration pour la conversion.
         """
         result = (-0.003 * value * value) + (50.266 * value) + 20.504
+        # Limiter la tension à 5V = 5000mV
+        if result > 5000:
+            result = 5000
         self.torque_voltage = int(result)
         return self.torque_voltage

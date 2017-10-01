@@ -38,7 +38,7 @@ from tinkerforge.ip_connection import Error, IPConnection
 
 import CONTROLEUR as PID
 
-import logger
+import logger as loggerData
 
 log.basicConfig(level=log.INFO)
 
@@ -67,9 +67,11 @@ class DataENERall:
     din_connected = False
     aout_connected = False
 
+    debug = False
+
     def __init__(self):
         self.ctrl = PID.CONTROLEUR(0.01, 0.5, 0.1)
-        self.logger = logger.LOGGER() #Enregistrement tous les 5 minutes (300s)
+        self.logger = loggerData.LOGGER() #Enregistrement tous les 5 minutes (300s)
         self.ipcon = IPConnection()
         while True:
             try:
@@ -106,7 +108,7 @@ class DataENERall:
         """
         Controleur callback
         """
-        print('Start controleur after 5 secondes')
+        log.info('Start controleur after 5 secondes')
         while True:
             # Calculer le couple toute les x secondes selon time_calcul
             time.sleep(self.time_calcul)
@@ -127,14 +129,21 @@ class DataENERall:
                 self.logger.put('Angular', self.ctrl.angular_velocity)
                 self.logger.put('Power', self.ctrl.power)
                 self.logger.put('Frequence', frequence)
-                text = 'Torque (Nm) %7.2f ' % self.ctrl.torque
-                text = text + 'Angular velocity (ms) %7.2f ' % self.ctrl.angular_velocity
-                text = text + 'Power (W) %7.2f ' % self.ctrl.power
-                text = text + 'Frequence (Hz) %7.2f ' % frequence
-                text = text + 'Voltage (mV) %7.0f ' % self.ctrl.torque_voltage
-                print(text)
+                self.logger.put('Temperature', self.temp.get_temperature() / 100.0)
+                self.logger.put('Intensity', self.sound.get_intensity())
+                x, y, z = self.accel.get_acceleration()
+                self.logger.put('AccelX', x / 1000.0)
+                self.logger.put('AccelY', y / 1000.0)
+                self.logger.put('AccelZ', z / 1000.0)
+                if self.debug:
+                    text = 'Torque (Nm) %7.2f ' % self.ctrl.torque
+                    text = text + 'Angular velocity (ms) %7.2f ' % self.ctrl.angular_velocity
+                    text = text + 'Power (W) %7.2f ' % self.ctrl.power
+                    text = text + 'Frequence (Hz) %7.2f ' % frequence
+                    text = text + 'Voltage (mV) %7.0f ' % self.ctrl.torque_voltage
+                    print(text)
             else:
-                print('Error in controleur: ' + str(self.aout_connected) + ' ' + str(self.din_connected))
+                log.error('Error in controleur: ' + str(self.aout_connected) + ' ' + str(self.din_connected))
 
     def cb_temperature(self, temperature):
         """
@@ -193,9 +202,8 @@ class DataENERall:
             if device_identifier == Temperature.DEVICE_IDENTIFIER:
                 try:
                     self.temp = Temperature(uid, self.ipcon)
-                    self.temp.set_temperature_callback_period(1000)
-                    self.temp.register_callback(
-                        self.temp.CALLBACK_TEMPERATURE, self.cb_temperature)
+                    #self.temp.set_temperature_callback_period(1000)
+                    #self.temp.register_callback(self.temp.CALLBACK_TEMPERATURE, self.cb_temperature)
                     log.info('Temperature initialized')
                 except Error as err:
                     log.error('Temperature init failed: ' +
@@ -204,9 +212,8 @@ class DataENERall:
             elif device_identifier == SoundIntensity.DEVICE_IDENTIFIER:
                 try:
                     self.sound = SoundIntensity(uid, self.ipcon)
-                    self.sound.set_intensity_callback_period(1000)
-                    self.sound.register_callback(
-                        self.sound.CALLBACK_INTENSITY, self.cb_sound)
+                    #self.sound.set_intensity_callback_period(1000)
+                    #self.sound.register_callback(self.sound.CALLBACK_INTENSITY, self.cb_sound)
                     log.info('Sound intensity initialized')
                 except Error as err:
                     log.error('Sound intensity init failed: ' +
@@ -215,9 +222,8 @@ class DataENERall:
             elif device_identifier == Accelerometer.DEVICE_IDENTIFIER:
                 try:
                     self.accel = Accelerometer(uid, self.ipcon)
-                    self.accel.set_acceleration_callback_period(1000)
-                    self.accel.register_callback(
-                        self.accel.CALLBACK_ACCELERATION, self.cb_accelerometer)
+                    #self.accel.set_acceleration_callback_period(1000)
+                    #self.accel.register_callback(self.accel.CALLBACK_ACCELERATION, self.cb_accelerometer)
                     log.info('Accelerometer initialized')
                 except Error as err:
                     log.error('Accelerometer init failed: ' +
@@ -234,8 +240,7 @@ class DataENERall:
             elif device_identifier == IndustrialAnalogOut.DEVICE_IDENTIFIER:
                 try:
                     self.aout = IndustrialAnalogOut(uid, self.ipcon)
-                    self.aout.set_configuration(
-                        self.aout.VOLTAGE_RANGE_0_TO_5V, self.aout.CURRENT_RANGE_0_TO_20MA)
+                    self.aout.set_configuration(self.aout.VOLTAGE_RANGE_0_TO_5V, self.aout.CURRENT_RANGE_0_TO_20MA)
                     self.aout.enable()
                     self.aout_connected = True
                     log.info('IndustrialAnalogOut initialized')
