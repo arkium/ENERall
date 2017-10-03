@@ -124,7 +124,7 @@ class CONTROLEUR:
 
         result = (-0.003 * value * value) + (50.266 * value) + 20.504
         # Limiter la tension à 5V = 5000mV
-        if result > 5000:
-            result = 5000
+        if result > 4500:
+            result = 4500
         self.torque_voltage = int(result)
         return self.torque_voltage
