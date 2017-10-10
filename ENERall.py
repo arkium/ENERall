@@ -57,7 +57,7 @@ class DataENERall:
     aout = None
     din = None
 
-    time_calcul = 2 # en seconde
+    time_calcul = 1 # en seconde
 
     compteur_turbine = 0 # Compteur de la turbine
 
@@ -69,6 +69,7 @@ class DataENERall:
     def __init__(self):
         self.ctrl = PID.CONTROLEUR(0.01, 0.5, 0.1)
         self.logger = loggerData.LOGGER() #Enregistrement tous les 5 minutes (300s)
+        self.logger.timectrl = self.time_calcul
         self.ipcon = IPConnection()
 
         while True:
