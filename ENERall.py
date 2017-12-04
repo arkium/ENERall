@@ -127,12 +127,16 @@ class DataENERall:
                 self.logger.put('Angular', self.ctrl.angular_velocity)
                 self.logger.put('Power', self.ctrl.power)
                 self.logger.put('Frequence', frequence)
-                self.logger.put('Temperature', self.temp.get_temperature() / 100.0)
-                self.logger.put('Intensity', self.sound.get_intensity())
-                x, y, z = self.accel.get_acceleration()
-                self.logger.put('AccelX', x / 1000.0)
-                self.logger.put('AccelY', y / 1000.0)
-                self.logger.put('AccelZ', z / 1000.0)
+                try:
+                    self.logger.put('Temperature', self.temp.get_temperature() / 100.0)
+                    self.logger.put('Intensity', self.sound.get_intensity())
+                    x, y, z = self.accel.get_acceleration()
+                    self.logger.put('AccelX', x / 1000.0)
+                    self.logger.put('AccelY', y / 1000.0)
+                    self.logger.put('AccelZ', z / 1000.0)
+                except Error as err:
+                    log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Bricklet failed: ' +
+                              str(err.description))
                 # Afficher pour le debug
                 if self.debug:
                     text = 'Torque (Nm) %7.2f ' % self.ctrl.torque
