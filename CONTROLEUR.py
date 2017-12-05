@@ -123,7 +123,7 @@ class CONTROLEUR:
         Faire la calibration pour la conversion."""
 
         result = (-0.003 * value * value) + (50.266 * value) + 20.504
-        # Limiter la tension à 5V = 5000mV
+        # Limiter la tension à 4V = 4000mV
         if result > 4000:
             result = 4000
         self.torque_voltage = int(result)

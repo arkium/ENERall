@@ -28,6 +28,7 @@ import time
 from tinkerforge.bricklet_accelerometer import Accelerometer
 from tinkerforge.bricklet_industrial_analog_out import IndustrialAnalogOut
 from tinkerforge.bricklet_industrial_digital_in_4 import IndustrialDigitalIn4
+from tinkerforge.bricklet_industrial_dual_analog_in import IndustrialDualAnalogIn
 from tinkerforge.bricklet_real_time_clock import RealTimeClock
 from tinkerforge.bricklet_sound_intensity import SoundIntensity
 from tinkerforge.bricklet_temperature import Temperature
@@ -56,13 +57,15 @@ class DataENERall:
     clock = None
     aout = None
     din = None
+    ain = None
 
     time_calcul = 1 # en seconde
 
     compteur_turbine = 0 # Compteur de la turbine
 
-    din_connected = False
     aout_connected = False
+    din_connected = False
+    ain_connected = False
 
     debug = False
 
@@ -113,7 +116,7 @@ class DataENERall:
             if self.aout_connected and self.din_connected:
                 # Récupérer valeur compteur pin 3 et mettre à zéro
                 # Calculer la fréquence en fonction du time_calcul
-                frequence = ((self.get_compteur(True)/23) / self.time_calcul) # 1 tr/s = 1Hz
+                frequence = ((self.get_compteur(True)/23) / self.time_calcul) # 1 tr/s = 1Hz et 23 = Nombre de dents
                 # Convertir fréquence en vitesse angulaire
                 self.ctrl.to_angular_velocity(frequence)
                 # Calculer le couple nécessaire
@@ -134,6 +137,8 @@ class DataENERall:
                     self.logger.put('AccelX', x / 1000.0)
                     self.logger.put('AccelY', y / 1000.0)
                     self.logger.put('AccelZ', z / 1000.0)
+                    self.logger.put('wind_direction', self.cb_wind_direction(self.ain.get_voltage(0)))
+                    self.logger.put('wind_velocity', self.cb_wind_velocity(self.ain.get_voltage(1)))
                 except Error as err:
                     log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Bricklet failed: ' +
                               str(err.description))
@@ -148,37 +153,20 @@ class DataENERall:
             else:
                 log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Error in controleur: ' + str(self.aout_connected) + ' ' + str(self.din_connected))
 
-    #def cb_temperature(self, temperature):
-    #    """Temperature callback"""
+    def cb_wind_direction(self, voltage):
+        """Convertir le voltage 0-10V (en mV) en direction du vent (en degré)"""
+        direction = ((voltage / 1000) / 10) * 360
+        return direction
 
-    #    self.logger.put('Temperature', temperature / 100.0)
-    #    text = 'Temperature %7.2f ?C' % (temperature / 100.0)
-    #    log.info(text)
-
-    #def cb_sound(self, intensity):
-    #    """Sound callback"""
-
-    #    self.logger.put('Intensity', intensity)
-    #    text = 'Intensity %7.2f' % (intensity)
-    #    log.info(text)
-
-    #def cb_accelerometer(self, xdata, ydata, zdata):
-    #    """Accelerometer callback"""
-
-    #    self.logger.put('AccelX', xdata / 1000.0)
-    #    self.logger.put('AccelY', ydata / 1000.0)
-    #    self.logger.put('AccelZ', zdata / 1000.0)
-    #    text = "Accel[X]: " + str(xdata / 1000.0) + " g "
-    #    text = text + "Accel[Y]: " + str(ydata / 1000.0) + " g "
-    #    text = text + "Accel[Z]: " + str(zdata / 1000.0) + " g"
-    #    log.info(text)
+    def cb_wind_velocity(self, voltage):
+        """Convertir le voltage 0-10V (en mV) en vitesse du vent (en m/s)"""
+        vitesse = ((voltage / 1000) * 7.49033) 
+        return vitesse
 
     def cb_compteur_turbine(self, interrupt_mask, value_mask):
         """Comptage du nombre de tours callback."""
 
-        #log.info('Masque: ' + str(value_mask) + ' ' + str(interrupt_mask))
-        #log.info('Masque and: ' + str(value_mask & 8) + ' ' + str(interrupt_mask & 8))
-        #if (value_mask == 0) and (interrupt_mask == 8):
+        #log.info('Compteur Pin: ' + str(value_mask & 8) + ' ' + str(interrupt_mask & 8))
         if ((value_mask & 8) == 8) and ((interrupt_mask & 8) == 8): #pin3 = 8 sur front montant
             self.compteur_turbine += 1
         #log.info(str(self.compteur_turbine))
@@ -199,8 +187,6 @@ class DataENERall:
             if device_identifier == Temperature.DEVICE_IDENTIFIER:
                 try:
                     self.temp = Temperature(uid, self.ipcon)
-                    #self.temp.set_temperature_callback_period(1000)
-                    #self.temp.register_callback(self.temp.CALLBACK_TEMPERATURE, self.cb_temperature)
                     log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' Temperature initialized')
                 except Error as err:
                     log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Temperature init failed: ' +
@@ -209,8 +195,6 @@ class DataENERall:
             elif device_identifier == SoundIntensity.DEVICE_IDENTIFIER:
                 try:
                     self.sound = SoundIntensity(uid, self.ipcon)
-                    #self.sound.set_intensity_callback_period(1000)
-                    #self.sound.register_callback(self.sound.CALLBACK_INTENSITY, self.cb_sound)
                     log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' Sound intensity initialized')
                 except Error as err:
                     log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Sound intensity init failed: ' +
@@ -219,21 +203,11 @@ class DataENERall:
             elif device_identifier == Accelerometer.DEVICE_IDENTIFIER:
                 try:
                     self.accel = Accelerometer(uid, self.ipcon)
-                    #self.accel.set_acceleration_callback_period(1000)
-                    #self.accel.register_callback(self.accel.CALLBACK_ACCELERATION, self.cb_accelerometer)
                     log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' Accelerometer initialized')
                 except Error as err:
                     log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' Accelerometer init failed: ' +
                               str(err.description))
                     self.accel = None
-            #elif device_identifier == RealTimeClock.DEVICE_IDENTIFIER:
-            #    try:
-            #        self.clock = RealTimeClock(uid, self.ipcon)
-            #        log.info('RealTimeClock initialized')
-            #    except Error as err:
-            #        log.error('RealTimeClock init failed: ' +
-            #                  str(err.description))
-            #        self.clock = None
             elif device_identifier == IndustrialAnalogOut.DEVICE_IDENTIFIER:
                 try:
                     self.aout = IndustrialAnalogOut(uid, self.ipcon)
@@ -245,6 +219,16 @@ class DataENERall:
                     log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' IndustrialAnalogOut init failed: ' +
                               str(err.description))
                     self.aout = None
+            elif device_identifier == IndustrialDualAnalogIn.DEVICE_IDENTIFIER:
+                try:
+                    self.ain = IndustrialDualAnalogIn(uid, self.ipcon)
+                    self.ain.set_sample_rate(6)
+                    self.ain_connected = True
+                    log.info(time.strftime("%Y-%m-%d %H:%M:%S") + ' IndustrialDualAnalogIn initialized')
+                except Error as err:
+                    log.error(time.strftime("%Y-%m-%d %H:%M:%S") + ' IndustrialDualAnalogIn init failed: ' +
+                              str(err.description))
+                    self.ain = None
             elif device_identifier == IndustrialDigitalIn4.DEVICE_IDENTIFIER:
                 try:
                     self.din = IndustrialDigitalIn4(uid, self.ipcon)
